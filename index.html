@@ -57,13 +57,21 @@
       <button id="start-button">Start Project</button>
     </div>
 
-    <a-scene vr-mode-ui="enabled: true">
+    <a-scene
+      vr-mode-ui="enabled: true"
+      webxr="referenceSpaceType: local; requiredFeatures: local; optionalFeatures: local-floor, bounded-floor"
+    >
       <a-entity id="world-root"></a-entity>
 
       <a-entity id="player-rig" position="0 0 0">
-        <a-camera id="camera" position="0 1.6 0" look-controls>
-          <a-cursor raycaster="objects: .clickable" fuse="false"></a-cursor>
-        </a-camera>
+        <a-camera id="camera" position="0 1.6 0" look-controls></a-camera>
+
+        <!-- Desktop mouse support -->
+        <a-entity
+          id="mouse-cursor"
+          cursor="rayOrigin: mouse; fuse: false"
+          raycaster="objects: .clickable"
+        ></a-entity>
 
         <a-entity
           id="left-controller"
