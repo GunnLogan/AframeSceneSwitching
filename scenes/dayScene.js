@@ -1,5 +1,13 @@
-// Day scene: sun, clouds, distant mountains, large ground, and one interaction cube.
+// Day scene using aframe-environment-component.
 window.DAY_SCENE = [
+  {
+    tag: 'a-entity',
+    attrs: {
+      environment:
+        'preset: forest; ground: hills; groundColor: #4f7f3a; groundColor2: #6aa84f; skyColor: #87CEEB; horizonColor: #d6f0ff; dressingAmount: 40; groundYScale: 6; lighting: distant'
+    }
+  },
+
   {
     tag: 'a-text',
     attrs: {
@@ -23,24 +31,7 @@ window.DAY_SCENE = [
     }
   },
 
-  {
-    tag: 'a-plane',
-    attrs: {
-      position: '0 0 -30',
-      rotation: '-90 0 0',
-      width: '120',
-      height: '120',
-      color: '#4f7f3a'
-    }
-  },
-
-  {
-    tag: 'a-sky',
-    attrs: {
-      color: '#87CEEB'
-    }
-  },
-
+  // Extra sun
   {
     tag: 'a-sphere',
     attrs: {
@@ -50,6 +41,7 @@ window.DAY_SCENE = [
     }
   },
 
+  // Extra cloud group 1
   {
     tag: 'a-sphere',
     attrs: {
@@ -78,6 +70,7 @@ window.DAY_SCENE = [
     }
   },
 
+  // Extra cloud group 2
   {
     tag: 'a-sphere',
     attrs: {
@@ -106,6 +99,7 @@ window.DAY_SCENE = [
     }
   },
 
+  // Extra distant mountains
   {
     tag: 'a-cone',
     attrs: {
@@ -155,6 +149,7 @@ window.DAY_SCENE = [
       color: '#ffffff'
     }
   },
+
   {
     tag: 'a-light',
     attrs: {

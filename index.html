@@ -4,11 +4,15 @@
     <meta charset="utf-8" />
     <title>Aframe Scene Switching</title>
 
-    <script src="https://unpkg.com/aframe@1.7/dist/aframe-master.min.js"></script>
+    <!-- A-Frame 1.7.0 -->
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
-    <!-- Two scenes switching in between2 -->
-    <script src="scenes/dayScene.js"></script>
-    <script src="scenes/nightScene.js"></script>
+    <!-- Environment component -->
+    <script src="https://unpkg.com/aframe-environment-component@1.1.0/dist/aframe-environment-component.min.js"></script>
+
+    <!-- Your separate scene files -->
+    <script src="./scenes/dayScene.js"></script>
+    <script src="./scenes/nightScene.js"></script>
 
     <style>
       html,
@@ -70,12 +74,14 @@
       <a-entity id="player-rig" position="0 0 0">
         <a-camera id="camera" position="0 1.6 0" look-controls></a-camera>
 
+        <!-- Desktop mouse interaction -->
         <a-entity
           id="mouse-cursor"
           cursor="rayOrigin: mouse; fuse: false"
           raycaster="objects: .clickable"
         ></a-entity>
 
+        <!-- Meta Quest / VR controller support -->
         <a-entity
           id="left-controller"
           laser-controls="hand: left"
@@ -109,7 +115,9 @@
         }
 
         if (!window.DAY_SCENE || !window.NIGHT_SCENE) {
-          throw new Error('Scene scripts did not load. Check that scenes/dayScene.js and scenes/nightScene.js exist.');
+          throw new Error(
+            'Scene scripts did not load. Check that ./scenes/dayScene.js and ./scenes/nightScene.js exist.'
+          );
         }
 
         const startScreen = document.querySelector('#start-screen');

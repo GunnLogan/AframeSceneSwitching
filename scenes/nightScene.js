@@ -1,5 +1,13 @@
-// Night scene: same layout as the day scene, but with night sky, stars, moon, darker mountains, and one interaction cube.
+// Night scene using aframe-environment-component.
 window.NIGHT_SCENE = [
+  {
+    tag: 'a-entity',
+    attrs: {
+      environment:
+        'preset: forest; ground: hills; groundColor: #1c2d1f; groundColor2: #0c1410; skyColor: #081426; horizonColor: #111a33; dressingAmount: 25; groundYScale: 6; lighting: distant; starType: dots'
+    }
+  },
+
   {
     tag: 'a-text',
     attrs: {
@@ -23,24 +31,7 @@ window.NIGHT_SCENE = [
     }
   },
 
-  {
-    tag: 'a-plane',
-    attrs: {
-      position: '0 0 -30',
-      rotation: '-90 0 0',
-      width: '120',
-      height: '120',
-      color: '#1c2d1f'
-    }
-  },
-
-  {
-    tag: 'a-sky',
-    attrs: {
-      color: '#081426'
-    }
-  },
-
+  // Moon
   {
     tag: 'a-sphere',
     attrs: {
@@ -50,6 +41,7 @@ window.NIGHT_SCENE = [
     }
   },
 
+  // Extra stars
   {
     tag: 'a-sphere',
     attrs: { position: '-8 7 -16', radius: '0.08', color: '#ffffff' }
@@ -95,6 +87,7 @@ window.NIGHT_SCENE = [
     attrs: { position: '-10 6.9 -21', radius: '0.07', color: '#ffffff' }
   },
 
+  // Extra distant mountains
   {
     tag: 'a-cone',
     attrs: {
@@ -144,6 +137,7 @@ window.NIGHT_SCENE = [
       color: '#aab8ff'
     }
   },
+
   {
     tag: 'a-light',
     attrs: {
