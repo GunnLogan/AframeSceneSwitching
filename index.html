@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>A-Frame Dynamic Scene Switch with WASD and Quest Controller</title>
+
+    <!-- A-Frame must load before our custom script -->
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  </head>
+
+  <body>
+    <a-scene>
+      <!-- Dynamic world content goes here -->
+      <a-entity id="world-root"></a-entity>
+
+      <!-- Player rig moves in browser with WASD -->
+      <a-entity id="player-rig" position="0 0 0" wasd-move="speed: 3">
+        <a-camera id="camera" position="0 1.6 0" look-controls>
+          <!-- Desktop mouse/cursor support -->
+          <a-cursor
+            raycaster="objects: .clickable"
+            fuse="false"
+          ></a-cursor>
+        </a-camera>
+
+        <!-- Meta Quest / VR controller support -->
+        <a-entity
+          id="left-controller"
+          laser-controls="hand: left"
+          raycaster="objects: .clickable"
+          line="color: #00ffff"
+        ></a-entity>
+
+        <a-entity
+          id="right-controller"
+          laser-controls="hand: right"
+          raycaster="objects: .clickable"
+          line="color: #00ffff"
+        ></a-entity>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      if (typeof AFRAME === 'undefined') {
+        throw new Error('A-Frame failed to load. Check the CDN script URL or your internet connection.');
+      }
+
+      if (typeof THREE === 'undefined') {
+        throw new Error('THREE failed to load. A-Frame may not have loaded correctly.');
+      }
+
+      const worldRoot = document.querySelector('#world-root');
+      const playerRig = document.querySelector('#player-rig');
+
+      let currentScene = 'cubeScene';
+
+      const scenes = {
+        cubeScene: [
+          {
+            tag: 'a-box',
+            attrs: {
+              position: '0 1 -4',
+              color: 'tomato',
+              rotation: '0 45 0',
+              depth: '1',
+              height: '1',
+              width: '1'
+            }
+          },
+
+          {
+            tag: 'a-box',
+            attrs: {
+              id: 'switch-button',
+              class: 'clickable',
+              position: '2 1 -3',
+              color: '#00ff88',
+              depth: '0.3',
+              height: '0.5',
+              width: '0.5',
+              switch_button: ''
+            }
+          },
+
+          {
+            tag: 'a-text',
+            attrs: {
+              value: 'Press the green cube button\nor walk into the blue trigger zone',
+              position: '-1.8 2 -3',
+              color: '#ffffff',
+              width: '4'
+            }
+          },
+
+          {
+            tag: 'a-cylinder',
+            attrs: {
+              id: 'walk-trigger',
+              position: '0 0.02 -7',
+              radius: '1.2',
+              height: '0.04',
+              color: '#00aaff',
+              opacity: '0.5',
+              transparent: 'true',
+              walk_trigger: 'targetScene: sphereScene; radius: 1.2'
+            }
+          },
+
+          {
+            tag: 'a-text',
+            attrs: {
+              value: 'Walk here',
+              position: '-0.6 0.1 -7',
+              rotation: '-90 0 0',
+              color: '#ffffff',
+              width: '3'
+            }
+          },
+
+          {
+            tag: 'a-plane',
+            attrs: {
+              position: '0 0 -4',
+              rotation: '-90 0 0',
+              width: '12',
+              height: '12',
+              color: '#334433'
+            }
+          },
+
+          {
+            tag: 'a-sky',
+            attrs: {
+              color: '#87CEEB'
+            }
+          },
+
+          {
+            tag: 'a-light',
+            attrs: {
+              type: 'directional',
+              position: '2 4 2',
+              intensity: '1'
+            }
+          }
+        ],
+
+        sphereScene: [
+          {
+            tag: 'a-sphere',
+            attrs: {
+              position: '0 1 -4',
+              color: 'gold',
+              radius: '1'
+            }
+          },
+
+          {
+            tag: 'a-box',
+            attrs: {
+              id: 'back-button',
+              class: 'clickable',
+              position: '2 1 -3',
+              color: '#ff44aa',
+              depth: '0.3',
+              height: '0.5',
+              width: '0.5',
+              switch_button: ''
+            }
+          },
+
+          {
+            tag: 'a-text',
+            attrs: {
+              value: 'Sphere scene\nPress pink cube to go back',
+              position: '-1.5 2 -3',
+              color: '#ffffff',
+              width: '4'
+            }
+          },
+
+          {
+            tag: 'a-cylinder',
+            attrs: {
+              position: '0 0.02 -7',
+              radius: '1.2',
+              height: '0.04',
+              color: '#ffaa00',
+              opacity: '0.5',
+              transparent: 'true',
+              walk_trigger: 'targetScene: cubeScene; radius: 1.2'
+            }
+          },
+
+          {
+            tag: 'a-text',
+            attrs: {
+              value: 'Walk here to return',
+              position: '-0.9 0.1 -7',
+              rotation: '-90 0 0',
+              color: '#ffffff',
+              width: '3'
+            }
+          },
+
+          {
+            tag: 'a-plane',
+            attrs: {
+              position: '0 0 -4',
+              rotation: '-90 0 0',
+              width: '12',
+              height: '12',
+              color: '#222244'
+            }
+          },
+
+          {
+            tag: 'a-sky',
+            attrs: {
+              color: '#111122'
+            }
+          },
+
+          {
+            tag: 'a-light',
+            attrs: {
+              type: 'point',
+              position: '0 3 0',
+              intensity: '2'
+            }
+          }
+        ]
+      };
+
+      function createEntity(definition) {
+        const el = document.createElement(definition.tag);
+
+        for (const [name, value] of Object.entries(definition.attrs)) {
+          el.setAttribute(name, value);
+        }
+
+        return el;
+      }
+
+      function unloadCurrentScene() {
+        while (worldRoot.firstChild) {
+          worldRoot.removeChild(worldRoot.firstChild);
+        }
+      }
+
+      function loadScene(sceneName) {
+        if (!scenes[sceneName]) {
+          console.error(`Scene "${sceneName}" does not exist.`);
+          return;
+        }
+
+        currentScene = sceneName;
+
+        unloadCurrentScene();
+
+        scenes[sceneName].forEach((definition) => {
+          const el = createEntity(definition);
+          worldRoot.appendChild(el);
+        });
+
+        playerRig.setAttribute('position', '0 0 0');
+      }
+
+      function switchScene() {
+        if (currentScene === 'cubeScene') {
+          loadScene('sphereScene');
+        } else {
+          loadScene('cubeScene');
+        }
+      }
+
+      AFRAME.registerComponent('wasd-move', {
+        schema: {
+          speed: { type: 'number', default: 3 }
+        },
+
+        init: function () {
+          this.keys = {};
+          this.camera = document.querySelector('#camera');
+
+          window.addEventListener('keydown', (event) => {
+            this.keys[event.code] = true;
+          });
+
+          window.addEventListener('keyup', (event) => {
+            this.keys[event.code] = false;
+          });
+        },
+
+        tick: function (time, deltaTime) {
+          const deltaSeconds = deltaTime / 1000;
+          const position = this.el.object3D.position;
+          const cameraRotation = this.camera.object3D.rotation;
+
+          const speed = this.data.speed * deltaSeconds;
+
+          const forward = new THREE.Vector3(0, 0, -1);
+          forward.applyEuler(new THREE.Euler(0, cameraRotation.y, 0));
+          forward.y = 0;
+          forward.normalize();
+
+          const right = new THREE.Vector3(1, 0, 0);
+          right.applyEuler(new THREE.Euler(0, cameraRotation.y, 0));
+          right.y = 0;
+          right.normalize();
+
+          if (this.keys['KeyW']) {
+            position.add(forward.clone().multiplyScalar(speed));
+          }
+
+          if (this.keys['KeyS']) {
+            position.add(forward.clone().multiplyScalar(-speed));
+          }
+
+          if (this.keys['KeyA']) {
+            position.add(right.clone().multiplyScalar(-speed));
+          }
+
+          if (this.keys['KeyD']) {
+            position.add(right.clone().multiplyScalar(speed));
+          }
+        }
+      });
+
+      AFRAME.registerComponent('switch_button', {
+        init: function () {
+          this.el.addEventListener('click', () => {
+            switchScene();
+          });
+
+          this.el.addEventListener('mouseenter', () => {
+            this.el.setAttribute('scale', '1.2 1.2 1.2');
+          });
+
+          this.el.addEventListener('mouseleave', () => {
+            this.el.setAttribute('scale', '1 1 1');
+          });
+        }
+      });
+
+      AFRAME.registerComponent('walk_trigger', {
+        schema: {
+          targetScene: { type: 'string', default: 'sphereScene' },
+          radius: { type: 'number', default: 1.2 }
+        },
+
+        init: function () {
+          this.hasTriggered = false;
+        },
+
+        tick: function () {
+          if (this.hasTriggered) return;
+
+          const triggerPosition = this.el.object3D.getWorldPosition(new THREE.Vector3());
+          const playerPosition = playerRig.object3D.getWorldPosition(new THREE.Vector3());
+
+          triggerPosition.y = 0;
+          playerPosition.y = 0;
+
+          const distance = triggerPosition.distanceTo(playerPosition);
+
+          if (distance < this.data.radius) {
+            this.hasTriggered = true;
+            loadScene(this.data.targetScene);
+          }
+        }
+      });
+
+      loadScene('cubeScene');
+    </script>
+  </body>
+</html>
