@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>Aframe Scene Switching</title>
 
-    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
     <style>
       html,
@@ -52,26 +52,28 @@
 
   <body>
     <div id="start-screen">
-      <h1>FED27 Aframe Scene Switching Showcase</h1>
+      <h1>Aframe Scene Switching</h1>
       <p>WASD in browser. Meta Quest controllers in VR.</p>
       <button id="start-button">Start Project</button>
     </div>
 
     <a-scene
       vr-mode-ui="enabled: true"
-      webxr="referenceSpaceType: local; requiredFeatures: local"    >
+      webxr="referenceSpaceType: local; requiredFeatures: local"
+    >
       <a-entity id="world-root"></a-entity>
 
       <a-entity id="player-rig" position="0 0 0">
         <a-camera id="camera" position="0 1.6 0" look-controls></a-camera>
 
-        <!-- Desktop mouse support -->
+        <!-- Desktop mouse interaction -->
         <a-entity
           id="mouse-cursor"
           cursor="rayOrigin: mouse; fuse: false"
           raycaster="objects: .clickable"
         ></a-entity>
 
+        <!-- Meta Quest / VR controller support -->
         <a-entity
           id="left-controller"
           laser-controls="hand: left"
@@ -174,7 +176,7 @@
 
       AFRAME.registerComponent('walk-trigger', {
         schema: {
-          targetScene: { type: 'string', default: 'sphereScene' },
+          targetScene: { type: 'string', default: 'aiScene' },
           radius: { type: 'number', default: 1.2 }
         },
 
@@ -243,7 +245,7 @@
               color: '#00aaff',
               opacity: '0.5',
               transparent: 'true',
-              'walk-trigger': 'targetScene: sphereScene; radius: 1.2'
+              'walk-trigger': 'targetScene: aiScene; radius: 1.2'
             }
           },
           {
@@ -282,13 +284,13 @@
           }
         ],
 
-        sphereScene: [
+        aiScene: [
           {
             tag: 'a-entity',
             attrs: {
-            position: '0 0 -4',
-            scale: '1 1 1',
-            'ai-model': 'prompt: glowing crystal fox guardian with silver horns'
+              position: '0 0 -4',
+              scale: '1 1 1',
+              'ai-model': 'prompt: ancient stone portal covered in moss and blue runes'
             }
           },
           {
@@ -306,7 +308,7 @@
           {
             tag: 'a-text',
             attrs: {
-              value: 'Sphere scene\nPress pink cube to go back',
+              value: 'AI model scene\nPress pink cube to go back',
               position: '-1.5 2 -3',
               color: '#ffffff',
               width: '4'
@@ -396,7 +398,7 @@
 
       function switchScene() {
         if (currentScene === 'cubeScene') {
-          loadScene('sphereScene');
+          loadScene('aiScene');
         } else {
           loadScene('cubeScene');
         }
