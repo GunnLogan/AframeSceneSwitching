@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>Aframe Scene Switching</title>
-   
+
     <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
     <style>
@@ -16,26 +16,36 @@
         font-family: Arial, sans-serif;
       }
 
+      a-scene {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      canvas {
+        display: block;
+      }
+
       #start-screen {
         position: fixed;
         inset: 0;
         z-index: 10;
         background: rgb(20, 1, 1);
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
+        text-align: center;
       }
 
       #start-button {
         font-size: 24px;
         padding: 16px 32px;
         cursor: pointer;
-      }
-
-      a-scene {
-        width: 100%;
-        height: 100%;
+        border: 0;
+        border-radius: 8px;
       }
     </style>
   </head>
@@ -47,10 +57,10 @@
       <button id="start-button">Start Project</button>
     </div>
 
-    <a-scene embedded vr-mode-ui="enabled: true">
+    <a-scene vr-mode-ui="enabled: true">
       <a-entity id="world-root"></a-entity>
 
-      <a-entity id="player-rig" position="0 0 0" wasd-move="speed: 3">
+      <a-entity id="player-rig" position="0 0 0">
         <a-camera id="camera" position="0 1.6 0" look-controls>
           <a-cursor raycaster="objects: .clickable" fuse="false"></a-cursor>
         </a-camera>
@@ -72,12 +82,116 @@
     </a-scene>
 
     <script>
+      if (typeof AFRAME === 'undefined') {
+        throw new Error('A-Frame failed to load. Check the CDN script URL or internet connection.');
+      }
+
+      if (typeof THREE === 'undefined') {
+        throw new Error('THREE failed to load. A-Frame may not have loaded correctly.');
+      }
+
       const startScreen = document.querySelector('#start-screen');
       const startButton = document.querySelector('#start-button');
       const worldRoot = document.querySelector('#world-root');
       const playerRig = document.querySelector('#player-rig');
+      const camera = document.querySelector('#camera');
 
       let currentScene = 'cubeScene';
+
+      AFRAME.registerComponent('wasd-move', {
+        schema: {
+          speed: { type: 'number', default: 3 }
+        },
+
+        init: function () {
+          this.keys = {};
+
+          window.addEventListener('keydown', (event) => {
+            this.keys[event.code] = true;
+          });
+
+          window.addEventListener('keyup', (event) => {
+            this.keys[event.code] = false;
+          });
+        },
+
+        tick: function (time, deltaTime) {
+          const deltaSeconds = deltaTime / 1000;
+          const position = this.el.object3D.position;
+          const cameraRotation = camera.object3D.rotation;
+          const speed = this.data.speed * deltaSeconds;
+
+          const forward = new THREE.Vector3(0, 0, -1);
+          forward.applyEuler(new THREE.Euler(0, cameraRotation.y, 0));
+          forward.y = 0;
+          forward.normalize();
+
+          const right = new THREE.Vector3(1, 0, 0);
+          right.applyEuler(new THREE.Euler(0, cameraRotation.y, 0));
+          right.y = 0;
+          right.normalize();
+
+          if (this.keys['KeyW']) {
+            position.add(forward.clone().multiplyScalar(speed));
+          }
+
+          if (this.keys['KeyS']) {
+            position.add(forward.clone().multiplyScalar(-speed));
+          }
+
+          if (this.keys['KeyA']) {
+            position.add(right.clone().multiplyScalar(-speed));
+          }
+
+          if (this.keys['KeyD']) {
+            position.add(right.clone().multiplyScalar(speed));
+          }
+        }
+      });
+
+      AFRAME.registerComponent('switch-button', {
+        init: function () {
+          this.el.addEventListener('click', () => {
+            switchScene();
+          });
+
+          this.el.addEventListener('mouseenter', () => {
+            this.el.setAttribute('scale', '1.2 1.2 1.2');
+          });
+
+          this.el.addEventListener('mouseleave', () => {
+            this.el.setAttribute('scale', '1 1 1');
+          });
+        }
+      });
+
+      AFRAME.registerComponent('walk-trigger', {
+        schema: {
+          targetScene: { type: 'string', default: 'sphereScene' },
+          radius: { type: 'number', default: 1.2 }
+        },
+
+        init: function () {
+          this.hasTriggered = false;
+        },
+
+        tick: function () {
+          if (this.hasTriggered) return;
+
+          const triggerPosition = this.el.object3D.getWorldPosition(new THREE.Vector3());
+          const playerPosition = playerRig.object3D.getWorldPosition(new THREE.Vector3());
+
+          triggerPosition.y = 0;
+          playerPosition.y = 0;
+
+          const distance = triggerPosition.distanceTo(playerPosition);
+
+          if (distance < this.data.radius) {
+            this.hasTriggered = true;
+            loadScene(this.data.targetScene);
+          }
+        }
+      });
 
       const scenes = {
         cubeScene: [
@@ -101,7 +215,7 @@
               depth: '0.3',
               height: '0.5',
               width: '0.5',
-              switch_button: ''
+              'switch-button': ''
             }
           },
           {
@@ -122,7 +236,7 @@
               color: '#00aaff',
               opacity: '0.5',
               transparent: 'true',
-              walk_trigger: 'targetScene: sphereScene; radius: 1.2'
+              'walk-trigger': 'targetScene: sphereScene; radius: 1.2'
             }
           },
           {
@@ -179,7 +293,7 @@
               depth: '0.3',
               height: '0.5',
               width: '0.5',
-              switch_button: ''
+              'switch-button': ''
             }
           },
           {
@@ -200,7 +314,7 @@
               color: '#ffaa00',
               opacity: '0.5',
               transparent: 'true',
-              walk_trigger: 'targetScene: cubeScene; radius: 1.2'
+              'walk-trigger': 'targetScene: cubeScene; radius: 1.2'
             }
           },
           {
@@ -257,6 +371,11 @@
       }
 
       function loadScene(sceneName) {
+        if (!scenes[sceneName]) {
+          console.error(`Scene "${sceneName}" does not exist.`);
+          return;
+        }
+
         currentScene = sceneName;
         unloadCurrentScene();
 
@@ -276,102 +395,7 @@
         }
       }
 
-      AFRAME.registerComponent('wasd-move', {
-        schema: {
-          speed: { type: 'number', default: 3 }
-        },
-
-        init: function () {
-          this.keys = {};
-          this.camera = document.querySelector('#camera');
-
-          window.addEventListener('keydown', (event) => {
-            this.keys[event.code] = true;
-          });
-
-          window.addEventListener('keyup', (event) => {
-            this.keys[event.code] = false;
-          });
-        },
-
-        tick: function (time, deltaTime) {
-          const deltaSeconds = deltaTime / 1000;
-          const position = this.el.object3D.position;
-          const cameraRotation = this.camera.object3D.rotation;
-
-          const speed = this.data.speed * deltaSeconds;
-
-          const forward = new THREE.Vector3(0, 0, -1);
-          forward.applyEuler(new THREE.Euler(0, cameraRotation.y, 0));
-          forward.y = 0;
-          forward.normalize();
-
-          const right = new THREE.Vector3(1, 0, 0);
-          right.applyEuler(new THREE.Euler(0, cameraRotation.y, 0));
-          right.y = 0;
-          right.normalize();
-
-          if (this.keys['KeyW']) {
-            position.add(forward.clone().multiplyScalar(speed));
-          }
-
-          if (this.keys['KeyS']) {
-            position.add(forward.clone().multiplyScalar(-speed));
-          }
-
-          if (this.keys['KeyA']) {
-            position.add(right.clone().multiplyScalar(-speed));
-          }
-
-          if (this.keys['KeyD']) {
-            position.add(right.clone().multiplyScalar(speed));
-          }
-        }
-      });
-
-      AFRAME.registerComponent('switch_button', {
-        init: function () {
-          this.el.addEventListener('click', () => {
-            switchScene();
-          });
-
-          this.el.addEventListener('mouseenter', () => {
-            this.el.setAttribute('scale', '1.2 1.2 1.2');
-          });
-
-          this.el.addEventListener('mouseleave', () => {
-            this.el.setAttribute('scale', '1 1 1');
-          });
-        }
-      });
-
-      AFRAME.registerComponent('walk_trigger', {
-        schema: {
-          targetScene: { type: 'string', default: 'sphereScene' },
-          radius: { type: 'number', default: 1.2 }
-        },
-
-        init: function () {
-          this.hasTriggered = false;
-        },
-
-        tick: function () {
-          if (this.hasTriggered) return;
-
-          const triggerPosition = this.el.object3D.getWorldPosition(new THREE.Vector3());
-          const playerPosition = playerRig.object3D.getWorldPosition(new THREE.Vector3());
-
-          triggerPosition.y = 0;
-          playerPosition.y = 0;
-
-          const distance = triggerPosition.distanceTo(playerPosition);
-
-          if (distance < this.data.radius) {
-            this.hasTriggered = true;
-            loadScene(this.data.targetScene);
-          }
-        }
-      });
+      playerRig.setAttribute('wasd-move', 'speed: 3');
 
       startButton.addEventListener('click', () => {
         startScreen.style.display = 'none';
